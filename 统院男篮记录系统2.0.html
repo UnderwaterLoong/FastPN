@@ -51,7 +51,7 @@
             z-index: 100;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
+
         .header-content {
             display: flex;
             justify-content: space-between;
@@ -653,6 +653,67 @@
             color: var(--light-text);
             font-style: italic;
         }
+        /* ----------------- Sidebar & UI overrides (added) ----------------- */
+        /* 将底部控件改为左侧侧边栏的覆盖样式（不改变主要颜色变量） */
+        .controls {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 16px;
+            background: linear-gradient(180deg, rgba(13,24,48,0.98), rgba(6,14,30,0.98));
+            color: #fff;
+            box-shadow: 2px 0 18px rgba(0,0,0,0.12);
+            z-index: 200;
+        }
+
+        .controls .brand { display:flex; align-items:center; gap:10px; font-weight:700; }
+        .controls .nav-btn { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:10px; background:rgba(255,255,255,0.03); color:#fff; border:none; cursor:pointer; text-align:left; transition:background .18s, transform .12s; }
+        .controls .nav-btn:hover { background:rgba(255,255,255,0.07); transform:translateX(6px); }
+        .controls .nav-spacer { flex:1; }
+        .controls .footer-btn { margin-top:auto; width:100%; padding:12px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; }
+
+        /* score card spacing to account for sidebar */
+        .score-display { margin: 14px 240px 18px 240px; padding:26px 22px; border-radius:14px; box-shadow:0 10px 30px rgba(10,132,255,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; position:relative; }
+        .score-display .score-block { flex:1 1 40%; }
+        .score-display .score-center { flex:0 0 80px; font-size:22px; color:var(--primary); font-weight:700; }
+        .score-display .score-container { width:100%; display:flex; justify-content:center; align-items:center; gap:36px; }
+        .score-display .game-info { width:100%; display:flex; justify-content:center; gap:12px; margin-top:12px; }
+        .main-content { margin-left: 240px; }
+
+        /* player card tweaks */
+        .player-card { border-radius:12px; padding:16px 12px; min-height:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; box-shadow:0 6px 18px rgba(10,10,30,0.04); border:1px solid rgba(10,10,30,0.04); transition:transform .18s, box-shadow .22s; text-align:center; }
+        .player-card:hover { transform:translateY(-6px); box-shadow:0 18px 36px rgba(10,10,30,0.06); }
+        .player-card.active { background:#fff; color:var(--text); border:2px solid var(--primary); box-shadow:0 20px 36px rgba(10,132,255,0.06); }
+
+        .player-card.playing { transform: scale(1.04); border: 2px solid rgba(50,215,75,0.12); }
+
+        /* players grid: make cards larger and fill each row proportionally */
+        .players-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; }
+        .player-number { font-size:22px; font-weight:800; color:var(--primary); }
+        .player-name { font-size:14px; color:var(--text); }
+
+        /* record area split columns */
+        .record-columns { display:grid; grid-template-columns: 1fr 1fr; gap:20px; align-items:start; }
+        .left-col, .right-col { display:flex; flex-direction:column; gap:12px; }
+
+        /* tab transitions */
+        .tab-content { display:none; opacity:0; transform:translateY(18px); transition:opacity .36s cubic-bezier(.2,.8,.2,1), transform .36s cubic-bezier(.2,.8,.2,1); }
+        .tab-content.active { display:block; opacity:1; transform:translateY(0); }
+
+        /* responsive adjustments: when small screen, hide sidebar and restore bottom controls */
+        @media (max-width: 900px) {
+            .controls { position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%; height: auto; flex-direction:row; justify-content:center; padding:12px; background: #fff; color: var(--text); box-shadow: 0 -8px 30px rgba(0,0,0,0.06); }
+            .controls .brand, .controls .nav-spacer { display:none; }
+            .controls .nav-btn { background: transparent; color: var(--text); padding: 8px 10px; }
+            .score-display { margin: 14px 16px 96px 16px; }
+            .main-content { margin-left: 0; padding-bottom: 84px; }
+            .players-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+        }
     </style>
 </head>
 <body>
@@ -690,46 +751,52 @@
         <div class="main-content">
             <!-- 比赛记录标签 -->
             <div class="tab-content active" id="record-tab">
-                <div class="section-title">
-                    <span>选择球员</span>
-                    <span id="playing-count">场上: 5/5</span>
-                </div>
-                <div class="players-grid" id="players-container">
-                    <!-- 球员将通过JS动态添加 -->
-                </div>
-                
-                <div class="section-title">我方得分</div>
-                <div class="actions-grid">
-                    <button class="action-btn btn-success" onclick="showShotModal(2)">2分球</button>
-                    <button class="action-btn btn-success" onclick="showShotModal(3)">3分球</button>
-                    <button class="action-btn btn-success" onclick="showFreeThrowModal()">罚球</button>
-                </div>
-                
-                <div class="section-title">其他数据</div>
-                <div class="actions-grid">
-                    <button class="action-btn btn-warning btn-small" onclick="showReboundModal('home')">篮板</button>
-                    <button class="action-btn btn-warning btn-small" onclick="recordStat('assist')">助攻</button>
-                    <button class="action-btn btn-warning btn-small" onclick="recordStat('steal')">抢断</button>
-                    <button class="action-btn btn-warning btn-small" onclick="recordStat('block')">盖帽</button>
-                    <button class="action-btn btn-warning btn-small" onclick="recordStat('turnover')">失误</button>
-                    <button class="action-btn btn-warning btn-small" onclick="recordStat('foul')">犯规</button>
-                    <button class="action-btn btn-substitution btn-small" id="substitution-btn" onclick="showSubstitutionModal()">换人</button>
-                </div>
-                
-                <div class="opponent-section">
-                    <div class="section-title">菜鸟对手数据</div>
-                    <div class="actions-grid">
-                        <button class="action-btn btn-danger" onclick="showOpponentShotModal(2)">对手2分</button>
-                        <button class="action-btn btn-danger" onclick="showOpponentShotModal(3)">对手3分</button>
-                        <button class="action-btn btn-danger" onclick="showOpponentFreeThrowModal()">对手罚球</button>
-                        <button class="action-btn btn-danger btn-small" onclick="showReboundModal('away')">对手篮板</button>
-                        <button class="action-btn btn-danger btn-small" onclick="recordOpponentStat('turnover')">对手失误</button>
+                <div class="record-columns">
+                    <div class="left-col">
+                        <div class="section-title">
+                            <span>选择球员</span>
+                            <span id="playing-count">场上: 5/5</span>
+                        </div>
+                        <div class="players-grid" id="players-container">
+                            <!-- 球员将通过JS动态添加 -->
+                        </div>
+
+                        <div class="section-title">我方得分</div>
+                        <div class="actions-grid">
+                            <button class="action-btn btn-success" onclick="showShotModal(2)">2分球</button>
+                            <button class="action-btn btn-success" onclick="showShotModal(3)">3分球</button>
+                            <button class="action-btn btn-success" onclick="showFreeThrowModal()">罚球</button>
+                        </div>
+
+                        <div class="section-title">其他数据</div>
+                        <div class="actions-grid">
+                            <button class="action-btn btn-warning btn-small" onclick="showReboundModal('home')">篮板</button>
+                            <button class="action-btn btn-warning btn-small" onclick="recordStat('assist')">助攻</button>
+                            <button class="action-btn btn-warning btn-small" onclick="recordStat('steal')">抢断</button>
+                            <button class="action-btn btn-warning btn-small" onclick="recordStat('block')">盖帽</button>
+                            <button class="action-btn btn-warning btn-small" onclick="recordStat('turnover')">失误</button>
+                            <button class="action-btn btn-warning btn-small" onclick="recordStat('foul')">犯规</button>
+                            <button class="action-btn btn-substitution btn-small" id="substitution-btn" onclick="showSubstitutionModal()">换人</button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="section-title">事件记录</div>
-                <div class="events-log" id="events-container">
-                    <div class="empty-state">暂无事件记录</div>
+
+                    <div class="right-col">
+                        <div class="opponent-section">
+                            <div class="section-title">对手数据</div>
+                            <div class="actions-grid">
+                                <button class="action-btn btn-danger" onclick="showOpponentShotModal(2)">对手2分</button>
+                                <button class="action-btn btn-danger" onclick="showOpponentShotModal(3)">对手3分</button>
+                                <button class="action-btn btn-danger" onclick="showOpponentFreeThrowModal()">对手罚球</button>
+                                <button class="action-btn btn-danger btn-small" onclick="showReboundModal('away')">对手篮板</button>
+                                <button class="action-btn btn-danger btn-small" onclick="recordOpponentStat('turnover')">对手失误</button>
+                            </div>
+                        </div>
+
+                        <div class="section-title">事件记录</div>
+                        <div class="events-log" id="events-container">
+                            <div class="empty-state">暂无事件记录</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -746,7 +813,6 @@
                         <input type="number" id="player-number" placeholder="输入球衣号码" min="0" max="99">
                     </div>
                     <button class="action-btn btn-primary" onclick="addPlayer()">添加球员</button>
-                    <button class="action-btn btn-warning" onclick="addDefaultPlayers()">添加默认球员</button>
                 </div>
                 
                 <div class="section-title">球员列表</div>
@@ -756,11 +822,19 @@
             </div>
         </div>
         
-        <div class="controls">
-            <button class="action-btn btn-primary" onclick="switchTab('record')">比赛记录</button>
-            <button class="action-btn btn-primary" onclick="switchTab('manage')">球员管理</button>
-            <button class="action-btn btn-primary" onclick="exportToExcel()">导出Excel</button>
-            <button class="action-btn btn-primary" onclick="nextQuarter()">下一节</button>
+        <div class="controls" id="sidebar">
+            <div class="brand">
+                <div style="width:34px;height:34px;background:rgba(255,255,255,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;">⚡</div>
+                <div>统院男篮记录台</div>
+            </div>
+
+            <button class="nav-btn" onclick="switchTab('record')">📋 比赛记录</button>
+            <button class="nav-btn" onclick="switchTab('manage')">👥 球员管理</button>
+            <button class="nav-btn" onclick="exportToExcel()">📤 导出Excel</button>
+
+            <div class="nav-spacer"></div>
+
+            <button class="footer-btn btn-primary" onclick="nextQuarter()">下一节 →</button>
         </div>
     </div>
 
@@ -1070,33 +1144,43 @@
             updateSubstitutionButton();
         }
         
-        // 渲染球员列表
+        // 渲染球员列表 — 仅显示号码（上）与姓名（下），去掉缩写与小统计，卡片按比例填满行
         function renderPlayers() {
             const playersContainer = document.getElementById('players-container');
             playersContainer.innerHTML = '';
-            
+
             // 只显示场上球员
             const playingPlayers = players.filter(player => player.playing);
-            
+
             if (playingPlayers.length === 0) {
                 playersContainer.innerHTML = '<div class="empty-state">暂无场上球员</div>';
                 return;
             }
-            
+
             playingPlayers.forEach(player => {
                 const playerCard = document.createElement('div');
-                playerCard.className = `player-card ${selectedPlayerId === player.id ? 'active' : ''} playing`;
+                playerCard.className = `player-card ${selectedPlayerId === player.id ? 'active' : ''} ${player.playing ? 'playing' : ''}`;
                 playerCard.dataset.id = player.id;
-                
+
+                // 简化展示：上面大号号码，下面全名（无缩写、小统计）
                 playerCard.innerHTML = `
-                    <div class="player-number">${player.number}</div>
-                    <div class="player-name">${player.name}</div>
-                    <div class="player-stats">${player.points}分 ${player.rebounds.offensive + player.rebounds.defensive}板 ${player.assists}助</div>
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+                        <div class="player-number">${player.number}</div>
+                        <div class="player-name">${player.name}</div>
+                    </div>
                 `;
-                
+
                 playerCard.addEventListener('click', () => selectPlayer(player.id));
                 playersContainer.appendChild(playerCard);
             });
+        }
+
+        // 生成名字首字母作为头像占位
+        function getInitials(name) {
+            if (!name) return '';
+            const parts = name.trim().split(/\s+|(?=[A-Za-z0-9])/);
+            if (parts.length === 1) return parts[0].slice(0,2);
+            return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
         }
         
         // 渲染球员管理列表
